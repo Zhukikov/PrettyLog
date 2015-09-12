@@ -31,10 +31,7 @@ readStep = 100
 
 makeAlfredOutput :: [LogEntry] -> String
 makeAlfredOutput values = ppElement $ unode "items" items
-                          where items = makeAlfredItems values
-
-makeAlfredItems :: [LogEntry] -> [Element]
-makeAlfredItems = L.map makeAlfredItem
+                          where items = L.map makeAlfredItem values
 
 makeAlfredItem :: LogEntry -> Element
 makeAlfredItem (LogEntry _ x) = unode "item" (attribute, title)
@@ -60,13 +57,13 @@ groupByToken (x:xs) temp groups leftover = if tokenFound x
                                            else groupByToken xs (temp ++ [x]) groups leftover
 
 parseStep :: Handle -> (Text, [LogEntry]) -> IO [LogEntry]
-parseStep h parsed = do
+parseStep h (extraText, entries) = do
   currentPosition <- S.hTell h
 
-  if L.length (snd parsed) >= tokenCount
-  then return $ lastN tokenCount $ snd parsed
+  if L.length entries >= tokenCount
+  then return $ lastN tokenCount $ entries
   else if currentPosition == 0
-       then return $ lastN tokenCount $ LogEntry "" (T.lines (fst parsed)) : snd parsed
+       then return $ lastN tokenCount $ LogEntry "" (T.lines extraText) : entries
        else do
          let step = min currentPosition readStep
 
@@ -75,31 +72,34 @@ parseStep h parsed = do
          str <- B.hGet h $ fromInteger step
          let decodedStr = E.decodeUtf8With EE.strictDecode str
 
-         let goodHead = getGoodHead currentPosition decodedStr
+         let goodPart = getGoodPart currentPosition decodedStr
 
          let goodSize = B.length $ E.encodeUtf8 decodedStr
            in S.hSeek h RelativeSeek $ toInteger (-goodSize)
 
-         if T.length goodHead == 0
-         then parseStep h (T.append decodedStr (fst parsed), snd parsed)
+         if T.length goodPart == 0
+         -- Didn't find the newline, continue reading.
+         then parseStep h (T.append decodedStr extraText, entries)
          else do
-           let newParsed = parseGroups $ T.lines $ T.append goodHead (fst parsed)
+           let (newExtra, newEntries) = parseGroups $ T.lines $ T.append goodPart extraText
 
            let dropped = L.head (T.lines decodedStr)
 
-           if L.length (snd newParsed) == 0
-           then parseStep h (T.unlines $ dropped : fst newParsed, snd parsed)
-           else parseStep h (T.unlines $ dropped : fst newParsed, snd newParsed ++ snd parsed)
+           if L.length newEntries == 0
+           then parseStep h (T.unlines $ dropped : newExtra, entries)
+           else parseStep h (T.unlines $ dropped : newExtra, newEntries ++ entries)
 
-getGoodHead :: Integer -> Text -> Text
-getGoodHead pos str
+getGoodPart :: Integer -> Text -> Text
+getGoodPart pos str
   | pos < readStep = str
   | otherwise = if "\n" `T.isInfixOf` str
-                then dropBadHead str
+                then getAfterNewline str
                 else T.empty
 
-dropBadHead :: Text -> Text
-dropBadHead s = T.tail $ T.dropWhile (/= '\n') s
+-- Drop everything from the beginning of the
+-- string untill and including first newline.
+getAfterNewline :: Text -> Text
+getAfterNewline s = T.tail $ T.dropWhile (/= '\n') s
 
 main :: IO ()
 main = do
