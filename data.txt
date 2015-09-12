@@ -1,0 +1,43 @@
+ggfdgsdfg
+gfdgsd
+[token] 12
+dsfadsafds
+[token] 11
+dsfadsaf
+[token] 10
+[token] 9
+asdf
+asd
+sadf
+dsaf
+[token] 8
+ggg gagfda
+[token] 7
+fdsafds
+  dsafdsaf
+
+[token] 6
+fdsafdsa
+fdsaf
+dsag
+fd
+g
+da
+[token] 5
+fdsafdsa
+    fdsafdsafs
+
+
+
+[token] 4
+fdsafdsa
+[token] 3 dfsafdsafsdfsad
+[token] 2
+bvbvcfdsafdsa åäö
+[token] 1
+bvbvcåäö
+bvbvcåäö
+bvbvcåäö
+bvbvcåäö
+bvbvcåäö
+bvbvcåäö
