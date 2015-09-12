@@ -73,7 +73,7 @@ parseStep h parsed = do
          S.hSeek h RelativeSeek (-step)
 
          str <- B.hGet h $ fromInteger step
-         let decodedStr = E.decodeUtf8With EE.ignore str
+         let decodedStr = E.decodeUtf8With EE.strictDecode str
 
          let goodHead = getGoodHead currentPosition decodedStr
 
