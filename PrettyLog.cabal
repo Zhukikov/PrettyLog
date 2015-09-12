@@ -62,7 +62,7 @@ executable PrettyLog
                        xml,
                        utf8-string,
                        text,
-                       regex-posix
+                       pcre-light
   
   -- Directories containing source files.
   hs-source-dirs:      src

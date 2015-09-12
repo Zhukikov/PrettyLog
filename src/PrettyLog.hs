@@ -7,18 +7,19 @@ import Data.List as L
 import Data.ByteString as B
 import System.IO as S
 import Text.XML.Light
-import Text.Regex.Posix
+import Text.Regex.PCRE.Light
 
 data LogEntry = LogEntry Text [Text]
                 deriving Show
 
--- Three words in the square brackets, that are separated
--- by a space and located in the beginning of the string.
-token :: String
-token = "^\\[[^ ]+ [^ ]+ [^ ]+\\] "
+-- One word in square brackets
+token :: Regex
+token = compile "^\\[[^ ]+\\]" []
 
 tokenFound :: Text -> Bool
-tokenFound t = T.unpack t =~ token :: Bool
+tokenFound t = case match token (E.encodeUtf8 t) [] of
+               Just _  -> True
+               Nothing -> False
 
 -- How many tokens to read at most
 tokenCount :: Int
