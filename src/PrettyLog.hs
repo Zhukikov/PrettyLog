@@ -58,28 +58,23 @@ groupByToken (x:xs) temp groups leftover = if tokenFound x
 
 parseStep :: Handle -> (Text, [LogEntry]) -> IO [LogEntry]
 parseStep h (extraText, entries) = do
+  decodedStr <- readDecodedStr h
   currentPosition <- S.hTell h
+  let goodPart = getGoodPart currentPosition decodedStr
+  if T.length goodPart == 0 && currentPosition /= 0
+  -- Didn't find the newline, continue reading.
+  then parseStep h (T.append decodedStr extraText, entries)
+  else do
+    let (newExtra, newEntries) = parseGroups $ T.lines $ T.append goodPart extraText
 
-  if L.length entries >= tokenCount
-  then return $ lastN tokenCount $ entries
-  else if currentPosition == 0
-       then return $ lastN tokenCount $ LogEntry "" (T.lines extraText) : entries
-       else do
-         decodedStr <- readDecodedStr h
+    if (L.length newEntries) + (L.length entries) >= tokenCount || currentPosition == 0
+    then return $ lastN tokenCount $ newEntries ++ entries
+    else do
+      let dropped = L.head (T.lines decodedStr)
 
-         let goodPart = getGoodPart currentPosition decodedStr
-
-         if T.length goodPart == 0
-         -- Didn't find the newline, continue reading.
-         then parseStep h (T.append decodedStr extraText, entries)
-         else do
-           let (newExtra, newEntries) = parseGroups $ T.lines $ T.append goodPart extraText
-
-           let dropped = L.head (T.lines decodedStr)
-
-           if L.length newEntries == 0
-           then parseStep h (T.unlines $ dropped : newExtra, entries)
-           else parseStep h (T.unlines $ dropped : newExtra, newEntries ++ entries)
+      if (L.length newEntries) == 0
+      then parseStep h (T.unlines $ dropped : newExtra, entries)
+      else parseStep h (T.unlines $ dropped : newExtra, newEntries ++ entries)
 
 -- Read string backwards
 readDecodedStr :: Handle -> IO Text
