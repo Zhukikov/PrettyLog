@@ -65,17 +65,9 @@ parseStep h (extraText, entries) = do
   else if currentPosition == 0
        then return $ lastN tokenCount $ LogEntry "" (T.lines extraText) : entries
        else do
-         let step = min currentPosition readStep
-
-         S.hSeek h RelativeSeek (-step)
-
-         str <- B.hGet h $ fromInteger step
-         let decodedStr = E.decodeUtf8With EE.strictDecode str
+         decodedStr <- readDecodedStr h
 
          let goodPart = getGoodPart currentPosition decodedStr
-
-         let goodSize = B.length $ E.encodeUtf8 decodedStr
-           in S.hSeek h RelativeSeek $ toInteger (-goodSize)
 
          if T.length goodPart == 0
          -- Didn't find the newline, continue reading.
@@ -88,6 +80,18 @@ parseStep h (extraText, entries) = do
            if L.length newEntries == 0
            then parseStep h (T.unlines $ dropped : newExtra, entries)
            else parseStep h (T.unlines $ dropped : newExtra, newEntries ++ entries)
+
+-- Read string backwards
+readDecodedStr :: Handle -> IO Text
+readDecodedStr h = do
+  currentPosition <- S.hTell h
+  let step = min currentPosition readStep
+
+  S.hSeek h RelativeSeek (-step)
+  str <- B.hGet h $ fromInteger step
+  S.hSeek h RelativeSeek (-step)
+
+  return $ E.decodeUtf8With EE.strictDecode str
 
 getGoodPart :: Integer -> Text -> Text
 getGoodPart pos str
