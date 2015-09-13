@@ -5,6 +5,7 @@ import Data.Text.Encoding as E
 import Data.List as L
 import Data.ByteString as B
 import System.IO as S
+import System.Environment as SE
 import Text.XML.Light
 import Text.Regex.PCRE.Light
 
@@ -117,7 +118,11 @@ getAfterNewline s = T.tail $ T.dropWhile (/= '\n') s
 
 main :: IO ()
 main = do
-  h <- S.openFile "data.txt" ReadMode
+  args <- SE.getArgs
+  let filename = case args of
+                   (x:_) -> x
+                   _      -> "data.txt"
+  h <- S.openFile filename ReadMode
   S.hSeek h SeekFromEnd 0
   values <- parseStep h (T.empty, [])
 
