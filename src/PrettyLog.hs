@@ -80,10 +80,7 @@ readDecodedStr :: Handle -> IO Text
 readDecodedStr h = do
   currentPosition <- S.hTell h
   let step = min currentPosition readStep
-
-  S.hSeek h RelativeSeek (-step)
-  str <- B.hGet h $ fromInteger step
-  S.hSeek h RelativeSeek (-step)
+  str <- readBytesBackwards h step
 
   decodeOrReadMore h str
 
@@ -93,16 +90,16 @@ decodeOrReadMore h str = do
 
   case newReadString of
     Left _ -> do
-      newStr <- readOneByte h
+      newStr <- readBytesBackwards h 1
       decodeOrReadMore h (B.append newStr str)
     Right y -> do
       return y
 
-readOneByte :: Handle -> IO ByteString
-readOneByte h = do
-  S.hSeek h RelativeSeek (-1)
-  newStr <- B.hGet h $ fromInteger 1
-  S.hSeek h RelativeSeek (-1)
+readBytesBackwards :: Handle -> Integer -> IO ByteString
+readBytesBackwards h c = do
+  S.hSeek h RelativeSeek (-c)
+  newStr <- B.hGet h $ fromInteger c
+  S.hSeek h RelativeSeek (-c)
   return newStr
 
 getGoodPart :: Integer -> Text -> Text
