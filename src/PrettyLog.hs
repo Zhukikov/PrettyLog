@@ -2,7 +2,6 @@
 
 import Data.Text as T
 import Data.Text.Encoding as E
-import Data.Text.Encoding.Error as EE
 import Data.List as L
 import Data.ByteString as B
 import System.IO as S
@@ -86,7 +85,25 @@ readDecodedStr h = do
   str <- B.hGet h $ fromInteger step
   S.hSeek h RelativeSeek (-step)
 
-  return $ E.decodeUtf8With EE.strictDecode str
+  decodeOrReadMore h str
+
+decodeOrReadMore :: Handle -> ByteString -> IO Text
+decodeOrReadMore h str = do
+  let newReadString = E.decodeUtf8' str
+
+  case newReadString of
+    Left _ -> do
+      newStr <- readOneByte h
+      decodeOrReadMore h (B.append newStr str)
+    Right y -> do
+      return y
+
+readOneByte :: Handle -> IO ByteString
+readOneByte h = do
+  S.hSeek h RelativeSeek (-1)
+  newStr <- B.hGet h $ fromInteger 1
+  S.hSeek h RelativeSeek (-1)
+  return newStr
 
 getGoodPart :: Integer -> Text -> Text
 getGoodPart pos str
