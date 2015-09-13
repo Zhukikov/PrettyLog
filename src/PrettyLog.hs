@@ -45,11 +45,12 @@ parseGroups :: [Text] -> ([Text], [LogEntry])
 parseGroups x = groupByToken x [] [] []
 
 groupByToken :: [Text] -> [Text] -> [LogEntry] -> [Text] -> ([Text], [LogEntry])
+groupByToken [] [] groups leftover = (leftover, groups)
 groupByToken [] temp groups leftover = (leftover, groups ++ [LogEntry "" temp])
 
-groupByToken (x:xs) [] [] leftover = if tokenFound x
-                                     then groupByToken xs [x] [] leftover
-                                     else groupByToken xs [] [] (leftover ++ [x])
+groupByToken (x:xs) []   []     leftover = if tokenFound x
+                                           then groupByToken xs [x] [] leftover
+                                           else groupByToken xs [] [] (leftover ++ [x])
 
 groupByToken (x:xs) temp groups leftover = if tokenFound x
                                            then groupByToken xs [x] (groups ++ [LogEntry "" temp]) leftover
