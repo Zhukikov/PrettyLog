@@ -12,9 +12,9 @@ import Text.Regex.PCRE.Light
 data LogEntry = LogEntry Text [Text]
                 deriving Show
 
--- One word in square brackets
+-- Some phrase in square brackets
 token :: Regex
-token = compile "^\\[[^ ]+\\]" []
+token = compile "^\\[.+\\]" []
 
 tokenFound :: Text -> Bool
 tokenFound t = case match token (E.encodeUtf8 t) [] of
