@@ -4,6 +4,7 @@ import Data.Text as T
 import Data.Text.Encoding as E
 import Data.List as L
 import Data.ByteString as B
+import Data.ByteString.Char8 as BChar
 import System.IO as S
 import System.Environment as SE
 import Text.XML.Light
@@ -34,10 +35,14 @@ makeAlfredOutput values = ppElement $ unode "items" items
                           where items = L.map makeAlfredItem values
 
 makeAlfredItem :: LogEntry -> Element
-makeAlfredItem (LogEntry _ x) = unode "item" (attribute, title)
-                   where first = L.head x
+makeAlfredItem (LogEntry _ x) = unode "item" (attribute, [subtitle, title])
+                   where first = L.drop (L.length tokenMatch) (T.unpack $ L.head x)
                          attribute = [Attr (QName "arg" Nothing Nothing) (T.unpack $ T.intercalate "\r\n" x)]
-                         title = [unode "title" (CData CDataText (T.unpack first) Nothing)]
+                         title = unode "title" (CData CDataText (first) Nothing)
+                         subtitle = unode "subtitle" (CData CDataText tokenMatch Nothing)
+                         tokenMatch = case match token (E.encodeUtf8 $ L.head x) [] of
+                                      Just (f:_) -> BChar.unpack f
+                                      Nothing -> ""
 
 lastN :: Int -> [a] -> [a]
 lastN n xs = L.drop (L.length xs - n) xs
