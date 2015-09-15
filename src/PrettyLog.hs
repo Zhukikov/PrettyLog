@@ -22,6 +22,11 @@ tokenFound t = case match token (E.encodeUtf8 t) [] of
                Just _  -> True
                Nothing -> False
 
+matchedToken :: Text -> Text
+matchedToken t = case match token (E.encodeUtf8 t) [] of
+                 Just (x:_) -> E.decodeUtf8 x
+                 Nothing    -> ""
+
 -- How many tokens to read at most
 tokenCount :: Int
 tokenCount = 8
@@ -35,14 +40,11 @@ makeAlfredOutput values = ppElement $ unode "items" items
                           where items = L.map makeAlfredItem values
 
 makeAlfredItem :: LogEntry -> Element
-makeAlfredItem (LogEntry _ x) = unode "item" (attribute, [subtitle, title])
-                   where first = L.drop (L.length tokenMatch) (T.unpack $ L.head x)
-                         attribute = [Attr (QName "arg" Nothing Nothing) (T.unpack $ T.intercalate "\r\n" x)]
-                         title = unode "title" (CData CDataText (first) Nothing)
-                         subtitle = unode "subtitle" (CData CDataText tokenMatch Nothing)
-                         tokenMatch = case match token (E.encodeUtf8 $ L.head x) [] of
-                                      Just (f:_) -> BChar.unpack f
-                                      Nothing -> ""
+makeAlfredItem (LogEntry _ x) = unode "item" ([entryData], [title, subtitle])
+                   where title = unode "title" (CData CDataText (previewText) Nothing)
+                         subtitle = unode "subtitle" (CData CDataText (T.unpack $ matchedToken $ L.head x) Nothing)
+                         entryData = Attr (QName "arg" Nothing Nothing) (T.unpack $ T.intercalate "\r\n" x)
+                         previewText = L.drop (T.length $ matchedToken $ L.head x) (T.unpack $ L.head x)
 
 lastN :: Int -> [a] -> [a]
 lastN n xs = L.drop (L.length xs - n) xs
