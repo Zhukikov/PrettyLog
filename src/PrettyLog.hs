@@ -44,7 +44,7 @@ makeAlfredItem (LogEntry _ x) = unode "item" ([entryData], [title, subtitle])
                    where title = unode "title" (CData CDataText (previewText) Nothing)
                          subtitle = unode "subtitle" (CData CDataText (T.unpack $ matchedToken $ L.head x) Nothing)
                          entryData = Attr (QName "arg" Nothing Nothing) (T.unpack $ T.intercalate "\r\n" x)
-                         previewText = L.drop (T.length $ matchedToken $ L.head x) (T.unpack $ L.head x)
+                         previewText = L.tail $ L.drop (T.length $ matchedToken $ L.head x) (T.unpack $ L.head x)
 
 lastN :: Int -> [a] -> [a]
 lastN n xs = L.drop (L.length xs - n) xs
